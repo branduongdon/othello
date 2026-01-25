@@ -98,14 +98,19 @@ function checkMove(position){
     //what pieces flipped
     var posRight = position + 1; //offset to start at next
     var posLeft = position - 1;
-    var currPosRight = (position % 8) + 1; //offset by 2 because indexing and to start at next
+    var currPosRight = (position % 8) + 1;
     var currPosLeft = (position % 8) - 1;
     var rightLegal = false;
     var leftLegal = false;
 
+    var currColUp = position - 8;
+    var currColDown = position + 8;
+    var upLegal = false;
+    var downLegal = false;
+
     //console.log(board[position]);
 
-    if (board[position] !== "-"){
+    if (board[position] !== "-"){ //empty
         return false;
     }
 
@@ -140,10 +145,37 @@ function checkMove(position){
                 currPosRight++;
             }
         }
-    }
 
-    return leftLegal || rightLegal;
-}
+        if (currColUp > -1 && board[currColUp] !== "W"){ //UP
+            upLegal = false;
+        } else {
+            while (currColUp > -1) {
+                if (board[currColUp] === "B"){
+                    upLegal = true;
+                } else if (board[currColUp] === "-"){
+                        break;
+                    }
+                    currColUp -= 8;
+                }
+            }
+
+        if (currColDown < 64 && board[currColDown] !== "W"){ //DOWN
+            downLegal = false;
+        } else {
+            while (currColDown < 64) {
+                if (board[currColDown] === "B"){
+                    downLegal = true;
+                } else if (board[currColDown] === "-"){
+                        break;
+                    }
+                    currColDown += 8;
+                }
+            }
+
+        }
+
+     return leftLegal || rightLegal || upLegal || downLegal;
+    }
 
 function highlightMove(){
     console.log("a b c d e f g h")
