@@ -1,5 +1,3 @@
-console.log("hello, world");
-
 const ROWS = 8;
 const COLUMNS = 8;
 
@@ -29,6 +27,8 @@ function initBoard() {
     board[28] = "B";
     board[35] = "B";
     board[36] = "W";
+
+    board[30] = "W";
 
     blackToMove = true;
 }
@@ -87,7 +87,68 @@ CONDITIONS for legal move:
 function checkMove(position){
     //is move legal
     //what pieces flipped
-    
+    var posRight = position + 1; //offset to start at next
+    var posLeft = position - 1;
+    var currPosRight = (position % 8) + 2; //offset by 2 because indexing and to start at next
+    var currPosLeft = (position % 8) - 2;
+    var oppStreakRight = false;
+    var oppStreakLeft = false;
+    var rightLegal = false;
+    var leftLegal = false;
+
+    //console.log(board[position]);
+
+    if (board[position] !== "-"){
+        return -1;
+    }
+
+    if (blackToMove){
+        for (currPosRight ; currPosRight < 9 ; currPosRight++){ //right direction
+            if (board[posRight] == "-"){ //next one to the right is empty
+                rightLegal = false;
+                break;
+            }
+
+            if (board[posRight] == "W"){ //next one right is white
+                oppStreakRight = true;
+                posRight++;
+                continue;
+            }
+
+            if (board[posRight] == "B" && oppStreakRight){ //black and streak (legal)
+                rightLegal = true;
+                break;
+            } else {// black but no streak
+                rightLegal = false;
+                break;
+            }
+        }
+
+        for (currPosLeft ; currPosLeft > 0 ; currPosLeft--){ //left direction
+            if (board[posLeft] == "-"){ //next one to the left is empty
+                leftLegal = false;
+                break;
+            }
+
+            if (board[posLeft] == "W"){ //next one left is white
+                oppStreakLeft = true;
+                posLeft--;
+                continue;
+            }
+
+            if (board[posLeft] == "B" && oppStreakLeft){ //black and streak (legal)
+                leftLegal = true;
+                break;
+            } else {// black but no streak
+                leftLegal = false;
+                break;
+            }
+        }
+    }
+
+    //return leftLegal;
+    return rightLegal;
+
 }
 
 function makeMove(position) {
@@ -97,20 +158,11 @@ function makeMove(position) {
 
 function test() {
     initBoard();
-    printBoard();
     makeMove(0);
+    makeMove(31)
     printBoard();
 
-    console.log(algebraicToIdx('a1'));
-    console.log(algebraicToIdx('a2'));
-    console.log(algebraicToIdx('a3'));
-    console.log(algebraicToIdx('a6'));
-    console.log(algebraicToIdx('h8'));
-    console.log(algebraicToIdx('i8'));
-    console.log(algebraicToIdx('i'));
-    console.log(algebraicToIdx(0xa));
-    console.log(algebraicToIdx('h9'));
-    console.log(algebraicToIdx(''));
+    console.log(checkMove(29));
 }
 
 test()
