@@ -108,14 +108,30 @@ function checkMove(position){
     var upLegal = false;
     var downLegal = false;
 
-    //console.log(board[position]);
+
+    //starter variables for diagonal checks, but need to check bounds differently than cardinal directions. maybe need floor division?
+    var currUpright = position - 7;
+    var upRightLegal = false;
+    var currUpLeft = position - 9;
+    var upLeftLegal = false;
+    var currDownRight = position + 9;
+    var downRightLegal = false;
+    var currDownLeft = + 7;
+    var downLeftLegal = false;
+
+    var color; //could use this instead of "B" or "W" to avoid line 135 repeat the inner code block for white's turn
+    if (blackToMove){
+        color = "B";
+    } else {
+        color = "W";
+    }
 
     if (board[position] !== "-"){ //empty
         return false;
     }
 
     if (blackToMove){
-        if (currPosLeft > -1 && board[posLeft] !== "W") {
+        if (currPosLeft > -1 && board[posLeft] !== "W") { //LEFT
             // the left piece is not a white piece, so the left side is not legal
             leftLegal = false;
         } else {
@@ -133,7 +149,7 @@ function checkMove(position){
         //                ^ check if this is W for left legality
         //              ^   then start here and search leftwards for a 'B'                 
         // same thing for right side
-        if (currPosRight < 9 && board[posRight] !== "W") {
+        if (currPosRight < 9 && board[posRight] !== "W") { //RIGHT
             rightLegal = false;
         } else {
             while (currPosRight < 9) {
@@ -174,8 +190,8 @@ function checkMove(position){
 
         }
 
-     return leftLegal || rightLegal || upLegal || downLegal;
-    }
+            return leftLegal || rightLegal || upLegal || downLegal;
+        }
 
 function highlightMove(){
     console.log("a b c d e f g h")
