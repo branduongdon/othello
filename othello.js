@@ -16,6 +16,17 @@ a b c d e f g h
 - - - - - - - - 8
 */
 
+var testBoard = [
+    ["B", "W", "W", "-", "-", "-", "-", "-",
+     "-", "-", "-", "-", "-", "W", "W", "W",
+     "-", "-", "-", "-", "-", "-", "-", "-",
+     "-", "-", "B", "W", "B", "-", "-", "-",
+     "-", "W", "W", "B", "W", "W", "-", "-",
+     "-", "-", "-", "-", "-", "-", "-", "-",
+     "-", "-", "-", "-", "-", "-", "-", "-",
+     "-", "-", "B", "B", "W", "B", "W", "-",]
+];
+
 function initBoard() {
     for (var r = 0; r < ROWS; r++) {
         for (var c = 0; c < COLUMNS; c++) {
@@ -27,8 +38,6 @@ function initBoard() {
     board[28] = "B";
     board[35] = "B";
     board[36] = "W";
-
-    board[30] = "W";
 
     blackToMove = true;
 }
@@ -89,66 +98,56 @@ function checkMove(position){
     //what pieces flipped
     var posRight = position + 1; //offset to start at next
     var posLeft = position - 1;
-    var currPosRight = (position % 8) + 2; //offset by 2 because indexing and to start at next
-    var currPosLeft = (position % 8) - 2;
-    var oppStreakRight = false;
-    var oppStreakLeft = false;
+    var currPosRight = (position % 8) + 1; //offset by 2 because indexing and to start at next
+    var currPosLeft = (position % 8) - 1;
     var rightLegal = false;
     var leftLegal = false;
 
     //console.log(board[position]);
 
     if (board[position] !== "-"){
-        return -1;
+        return false;
     }
 
     if (blackToMove){
-        for (currPosRight ; currPosRight < 9 ; currPosRight++){ //right direction
-            if (board[posRight] == "-"){ //next one to the right is empty
-                rightLegal = false;
-                break;
-            }
-
-            if (board[posRight] == "W"){ //next one right is white
-                oppStreakRight = true;
-                posRight++;
-                continue;
-            }
-
-            if (board[posRight] == "B" && oppStreakRight){ //black and streak (legal)
-                rightLegal = true;
-                break;
-            } else {// black but no streak
-                rightLegal = false;
-                break;
+        if (currPosLeft > -1 && board[posLeft] !== "W") {
+            // the left piece is not a white piece, so the left side is not legal
+            leftLegal = false;
+        } else {
+            // otherwise, the left side might be legal, so check
+            while (currPosLeft > -1) {
+                if (board[posLeft] === "B")
+                    leftLegal = true;
+                else if (board[posLeft] === "-")
+                    break;
+                posLeft--;
+                currPosLeft--;
             }
         }
-
-        for (currPosLeft ; currPosLeft > 0 ; currPosLeft--){ //left direction
-            if (board[posLeft] == "-"){ //next one to the left is empty
-                leftLegal = false;
-                break;
-            }
-
-            if (board[posLeft] == "W"){ //next one left is white
-                oppStreakLeft = true;
-                posLeft--;
-                continue;
-            }
-
-            if (board[posLeft] == "B" && oppStreakLeft){ //black and streak (legal)
-                leftLegal = true;
-                break;
-            } else {// black but no streak
-                leftLegal = false;
-                break;
+        //    ... - - B W W *
+        //                ^ check if this is W for left legality
+        //              ^   then start here and search leftwards for a 'B'                 
+        // same thing for right side
+        if (currPosRight < 9 && board[posRight] !== "W") {
+            rightLegal = false;
+        } else {
+            while (currPosRight < 9) {
+                if (board[posRight] === "B")
+                    rightLegal = true;
+                else if (board[posRight] === "-")
+                    break;
+                posRight++;
+                currPosRight++;
             }
         }
     }
 
-    //return leftLegal;
-    return rightLegal;
+    return leftLegal || rightLegal;
+}
 
+function checkMoveAlgebraic(position) {
+    var idx = algebraicToIdx(position);
+    return checkMove(idx);
 }
 
 function makeMove(position) {
@@ -158,11 +157,37 @@ function makeMove(position) {
 
 function test() {
     initBoard();
-    makeMove(0);
-    makeMove(31)
-    printBoard();
+    //makeMove(0);
+    //makeMove(31);
 
-    console.log(checkMove(29));
+    //console.log(checkMove(29));
+    //console.log(checkMove(29+8));
+    //console.log(checkMove(29+8+1));
+    for (var i = 0; i < testBoard.length; i++) {
+        board = testBoard[i];
+        printBoard();
+        
+        // left tests
+        console.log("Black move at b8 is " + checkMoveAlgebraic("b8"));
+        console.log("Black move at d8 is " + checkMoveAlgebraic("d8"));
+        console.log("Black move at b4 is " + checkMoveAlgebraic("b4"));
+        console.log("Black move at g5 is " + checkMoveAlgebraic("g5"));
+        console.log("Black move at d1 is " + checkMoveAlgebraic("d1"));
+        console.log("Black move at f4 is " + checkMoveAlgebraic("f4"));
+
+
+        // right tests
+        console.log("Black move at b5 is " + checkMoveAlgebraic("b5"));
+
+        // misc tests
+        console.log("Black move at b8 is " + checkMoveAlgebraic("b8"));
+        console.log("Black move at f8 is " + checkMoveAlgebraic("f8"));
+        console.log("Black move at g8 is " + checkMoveAlgebraic("g8"));
+        console.log("Black move at h8 is " + checkMoveAlgebraic("h8"));
+        console.log("Black move at h1 is " + checkMoveAlgebraic("h1"));
+        console.log("Black move at a5 is " + checkMoveAlgebraic("a5"));
+        console.log("Black move at e2 is " + checkMoveAlgebraic("e2"));
+    }
 }
 
 test()
