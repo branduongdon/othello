@@ -145,6 +145,22 @@ function checkMove(position){
     return leftLegal || rightLegal;
 }
 
+function highlightMove(){
+    console.log("a b c d e f g h")
+    for (var r = 0; r < ROWS; r++) {
+        var output = ""
+        for (var c = 0; c < COLUMNS; c++) {
+            var idx = 8*r + c;
+            if (checkMove(idx)){
+                output += "* ";
+            } else {
+                output += board[idx] + " ";
+            }
+        }
+        console.log(output + (r + 1));
+    }
+}
+
 function checkMoveAlgebraic(position) {
     var idx = algebraicToIdx(position);
     return checkMove(idx);
@@ -165,28 +181,9 @@ function test() {
     //console.log(checkMove(29+8+1));
     for (var i = 0; i < testBoard.length; i++) {
         board = testBoard[i];
-        printBoard();
+        //printBoard();
         
-        // left tests
-        console.log("Black move at b8 is " + checkMoveAlgebraic("b8"));
-        console.log("Black move at d8 is " + checkMoveAlgebraic("d8"));
-        console.log("Black move at b4 is " + checkMoveAlgebraic("b4"));
-        console.log("Black move at g5 is " + checkMoveAlgebraic("g5"));
-        console.log("Black move at d1 is " + checkMoveAlgebraic("d1"));
-        console.log("Black move at f4 is " + checkMoveAlgebraic("f4"));
-
-
-        // right tests
-        console.log("Black move at b5 is " + checkMoveAlgebraic("b5"));
-
-        // misc tests
-        console.log("Black move at b8 is " + checkMoveAlgebraic("b8"));
-        console.log("Black move at f8 is " + checkMoveAlgebraic("f8"));
-        console.log("Black move at g8 is " + checkMoveAlgebraic("g8"));
-        console.log("Black move at h8 is " + checkMoveAlgebraic("h8"));
-        console.log("Black move at h1 is " + checkMoveAlgebraic("h1"));
-        console.log("Black move at a5 is " + checkMoveAlgebraic("a5"));
-        console.log("Black move at e2 is " + checkMoveAlgebraic("e2"));
+        highlightMove();
     }
 }
 
