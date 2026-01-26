@@ -1,3 +1,4 @@
+"use strict";
 const ROWS = 8;
 const COLUMNS = 8;
 
@@ -51,6 +52,38 @@ var testBoard = [
      "-", "-", "-", "-", "-", "-", "-", "-",],
 ];
 
+class Coordinate {
+    constructor(row, col) {
+        this.row = row;
+        this.col = col;
+    }
+    toPosition() {
+        return 8*this.row + this.col;
+    }
+    isValid() {
+        return (this.row > -1) && (this.row < 8) && (this.col > -1) && (this.col < 8);
+    }
+    getAdjacent() {
+        // Does not check the validity 
+        return [
+            new Coordinate(this.row-1, this.col-1),
+            new Coordinate(this.row-1, this.col),
+            new Coordinate(this.row-1, this.col+1),
+            new Coordinate(this.row  , this.col+1),
+            new Coordinate(this.row+1, this.col+1),
+            new Coordinate(this.row+1, this.col  ),
+            new Coordinate(this.row+1, this.col-1),
+            new Coordinate(this.row  , this.col-1),
+        ]
+    }
+    /*
+    setCoordinate(row, col) {
+        this.row = row;
+        this.col = col;
+    }
+        */
+}
+
 function initBoard() {
     for (var r = 0; r < ROWS; r++) {
         for (var c = 0; c < COLUMNS; c++) {
@@ -100,9 +133,32 @@ function algebraicToIdx(algebraic) {
     return 8*(Number(row)-1) + (col.charCodeAt(0) - 'a'.charCodeAt(0));
 }
 
+function algebraicToCoordinate(algebraic) {
+    if (typeof algebraic != "string" || algebraic.length != 2)
+        return -1;
+
+    var col = algebraic[0].toLowerCase(); // "h"
+    var row = algebraic[1].toLowerCase(); // "8"
+
+    // bounds checking
+    if (col < 'a' || col > 'h') return -1;
+    if (Number(row) < 1 || Number(row) > 8) return -1;
+
+    return new Coordinate(Number(row)-1, col.charCodeAt(0) - 'a'.charCodeAt(0));
+
+}
+
 function positionToRowAndCol(position) {
     // [row, column]
     return [Math.floor(position / 8), position % 8]
+}
+
+function getOppositeColorSymbol() {
+    return blackToMove ? "W" : "B";
+}
+
+function getCurrentColorSymbol() {
+    return blackToMove ? "B" : "W";
 }
 
 /*
@@ -122,165 +178,75 @@ CONDITIONS for legal move:
 2. there must be an unbroken sequence of opposite colored pieces in between,
    ending with a piece of the same color, and no empty squares in between
 */
-
-function coordinateToPosition(coordinate) {
-    return coordinate[0]*8 + coordinate[1];
-}
 function checkMoveByCoordinates(coordinate) {
-    var leftLegal = false;
-    var upRightDiagonalLegal = false;
-
-    // leftwards check
-    var row = coordinate[0];
-    var col = coordinate[1];
-    var position = coordinateToPosition(coordinate);
-
-    var currPosLeft = col - 1;
-    var currPosUpperRight = [row-1, col+1];
-    if (board[position] !== "-") {
+    // If the queried position is not empty, then the move is illegal.
+    if (board[coordinate.toPosition()] !== "-") {
         return false;
     }
-    if (blackToMove) {
-        //if (currPosLeft > -1 && board[posLeft] !== "W") { //LEFT
-        if (currPosLeft > -1 && board[coordinateToPosition([row,currPosLeft])] !== "W") { //LEFT
-            // the left piece is not a white piece, so the left side is not legal
-            leftLegal = false;
-        } else {
-            // otherwise, the left side might be legal, so check
-            while (currPosLeft > -1) {
-                if (board[coordinateToPosition([row,currPosLeft])] === "B")
-                    leftLegal = true;
-                else if (board[coordinateToPosition([row,currPosLeft])] === "-")
-                    break;
-                currPosLeft--;
-            }
-        }
 
-        if (currPosUpperRight[0] > -1 && currPosUpperRight[1] < 8
-            && board[coordinateToPosition(currPosUpperRight)] !== "W" ) {
-                upRightDiagonalLegal = false;
-        } else {
-            // otherwise, the left side might be legal, so check
-            while (currPosUpperRight[0] > -1 && currPosUpperRight[1] < 8) {
-                if (board[coordinateToPosition(currPosUpperRight)] === "B")
-                    leftLegal = true;
-                else if (board[coordinateToPosition(currPosUpperRight)] === "-")
+    // Keep track of legal directions.
+    var legalDirections = new Array(8).fill(false);
+
+    // BEGIN checking in all directions.
+    // `adjacentCoordinates` is an array holding the adjacent coordinates numbered 0 to 7 shown below.
+    // 0 1 2
+    // 7 * 3   (* = the position of the move to be checked, `coordinate`)
+    // 6 5 4   (directions are checked in increasing order, starting from 0)
+    var adjacentCoordinates = coordinate.getAdjacent();
+
+    for (var i = 0; i != 8; ++i) {
+        var currPos = adjacentCoordinates[i];
+        if (currPos.isValid() && board[currPos.toPosition()] === getOppositeColorSymbol()) {
+            while (currPos.isValid()) {
+                if (board[currPos.toPosition()] === getCurrentColorSymbol())
+                    legalDirections[i] = true;
+                else if (board[currPos.toPosition()] === "-")
                     break;
-                currPosUpperRight[0]--;
-                currPosUpperRight[1]++;
+                // Update the coordinate based on the direction as described above.
+                switch (i) {
+                    case 0:
+                        currPos.col--;
+                        currPos.row--;
+                        break;
+                    case 1:
+                        currPos.row--;
+                        break;
+                    case 2:
+                        currPos.row--;
+                        currPos.col++;
+                        break;
+                    case 3:
+                        currPos.col++;
+                        break;
+                    case 4:
+                        currPos.row++;
+                        currPos.col++;
+                        break;
+                    case 5:
+                        currPos.row++;
+                        break;
+                    case 6:
+                        currPos.row++;
+                        currPos.col--;
+                        break;
+                    case 7:
+                        currPos.col--;
+                        break;
+                }
             }
         }
     }
-    return leftLegal || upRightDiagonalLegal;
+    return legalDirections.some(value => value === true);
 }
-function checkMove(position){
-    //is move legal
-    //what pieces flipped
-    var posRight = position + 1; //offset to start at next
-    var posLeft = position - 1;
-    var currPosRight = (position % 8) + 1;
-    var currPosLeft = (position % 8) - 1;
-    var rightLegal = false;
-    var leftLegal = false;
 
-    var currColUp = position - 8;
-    var currColDown = position + 8;
-    var upLegal = false;
-    var downLegal = false;
-
-
-    //starter variables for diagonal checks, but need to check bounds differently than cardinal directions. maybe need floor division?
-    var currUpright = position - 7;
-    var upRightLegal = false;
-    var currUpLeft = position - 9;
-    var upLeftLegal = false;
-    var currDownRight = position + 9;
-    var downRightLegal = false;
-    var currDownLeft = + 7;
-    var downLeftLegal = false;
-
-    var color; //could use this instead of "B" or "W" to avoid line 135 repeat the inner code block for white's turn
-    if (blackToMove){
-        color = "B";
-    } else {
-        color = "W";
-    }
-
-    if (board[position] !== "-"){ //empty
-        return false;
-    }
-
-    if (blackToMove){
-        if (currPosLeft > -1 && board[posLeft] !== "W") { //LEFT
-            // the left piece is not a white piece, so the left side is not legal
-            leftLegal = false;
-        } else {
-            // otherwise, the left side might be legal, so check
-            while (currPosLeft > -1) {
-                if (board[posLeft] === "B")
-                    leftLegal = true;
-                else if (board[posLeft] === "-")
-                    break;
-                posLeft--;
-                currPosLeft--;
-            }
-        }
-        //    ... - - B W W *
-        //                ^ check if this is W for left legality
-        //              ^   then start here and search leftwards for a 'B'                 
-        // same thing for right side
-        if (currPosRight < 9 && board[posRight] !== "W") { //RIGHT
-            rightLegal = false;
-        } else {
-            while (currPosRight < 8) {
-                if (board[posRight] === "B")
-                    rightLegal = true;
-                else if (board[posRight] === "-")
-                    break;
-                posRight++;
-                currPosRight++;
-            }
-        }
-
-        if (currColUp > -1 && board[currColUp] !== "W"){ //UP
-            upLegal = false;
-        } else {
-            while (currColUp > -1) {
-                if (board[currColUp] === "B"){
-                    upLegal = true;
-                } else if (board[currColUp] === "-"){
-                        break;
-                    }
-                    currColUp -= 8;
-                }
-            }
-
-        if (currColDown < 64 && board[currColDown] !== "W"){ //DOWN
-            downLegal = false;
-        } else {
-            while (currColDown < 64) {
-                if (board[currColDown] === "B"){
-                    downLegal = true;
-                } else if (board[currColDown] === "-"){
-                        break;
-                    }
-                    currColDown += 8;
-                }
-            }
-
-        }
-
-            return leftLegal || rightLegal || upLegal || downLegal;
-        }
-
-function highlightMove(){
+function highlightLegalMoves(){
     console.log("a b c d e f g h")
     for (var r = 0; r < ROWS; r++) {
         var output = ""
         for (var c = 0; c < COLUMNS; c++) {
             var idx = 8*r + c;
             //if (checkMove(idx)){
-            if (checkMoveByCoordinates([r,c])){
+            if (checkMoveByCoordinates(new Coordinate(r, c))){
                 output += "* ";
             } else {
                 output += board[idx] + " ";
@@ -290,29 +256,20 @@ function highlightMove(){
     }
 }
 
-function checkMoveAlgebraic(position) {
-    var idx = algebraicToIdx(position);
-    return checkMove(idx);// TODO
+function checkMoveAlgebraic(algebraic) {
+    return checkMoveByCoordinates(algebraicToCoordinate(algebraic));// TODO
 }
 
 function makeMove(position) {
     var symbol = blackToMove ? "B" : "W";
     board[position] = symbol;
+    blackToMove = !blackToMove;
 }
 
 function test() {
-    initBoard();
-    //makeMove(0);
-    //makeMove(31);
-
-    //console.log(checkMove(29));
-    //console.log(checkMove(29+8));
-    //console.log(checkMove(29+8+1));
     for (var i = 0; i < testBoard.length; i++) {
         board = testBoard[i];
-        //printBoard();
-        
-        highlightMove();
+        highlightLegalMoves();
     }
 }
 
@@ -323,20 +280,22 @@ function randomTest() {
         else if (x < 0.75) return "W"
         else return "B"
     })
-    highlightMove(board);
-}
-
-function test2() {
-    board = Array.from({length: 64});
-    var i = 0;
-    while (i < 64) {
-        board[i] = "X";
-        i += 9;
-    }
-    print(board);
+    highlightLegalMoves(board);
 }
 
 function main() {
+    initBoard();
+    console.log("f4 is legal? " + checkMoveAlgebraic("f4"));
+    console.log("d3 is legal? " + checkMoveAlgebraic("d3"));
+
+    console.log("Black to move.")
+    test();
+    for (var i = 0; i != 10; ++i) {
+        randomTest();
+        console.log("")
+    }
+    blackToMove = false;
+    console.log("White to move.")
     test();
     for (var i = 0; i != 10; ++i) {
         randomTest();
