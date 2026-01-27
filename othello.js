@@ -17,7 +17,7 @@ a b c d e f g h
 - - - - - - - - 8
 */
 
-var testBoard = [
+const testBoards = [
     ["B", "W", "W", "-", "-", "-", "-", "-",
      "-", "-", "-", "-", "-", "W", "W", "W",
      "-", "-", "-", "-", "-", "-", "-", "-",
@@ -114,23 +114,7 @@ function printBoard() {
 // Translates algebraic notation to the appropriate index for
 // the board representation.
 function algebraicToIdx(algebraic) {
-    if (typeof algebraic != "string" || algebraic.length != 2)
-        return -1;
-
-    var col = algebraic[0].toLowerCase(); // "h"
-    var row = algebraic[1].toLowerCase(); // "8"
-
-    // bounds checking
-    if (col < 'a' || col > 'h') return -1;
-    if (Number(row) < 1 || Number(row) > 8) return -1;
-
-    /*  (in C)
-        char first = 'A'; ascii: 65
-        char second = 'C'; ascii: 67
-        int difference = second - first; // 2
-    */
-    // 8*r + c
-    return 8*(Number(row)-1) + (col.charCodeAt(0) - 'a'.charCodeAt(0));
+    return algebraicToCoordinate(algebraic).toPosition();
 }
 
 function algebraicToCoordinate(algebraic) {
@@ -244,13 +228,8 @@ function highlightLegalMoves(){
     for (var r = 0; r < ROWS; r++) {
         var output = ""
         for (var c = 0; c < COLUMNS; c++) {
-            var idx = 8*r + c;
-            //if (checkMove(idx)){
-            if (checkMoveByCoordinates(new Coordinate(r, c))){
-                output += "* ";
-            } else {
-                output += board[idx] + " ";
-            }
+            let coord = new Coordinate(r, c);
+            output += checkMoveByCoordinates(coord) ? "* " : board[coord.toPosition()] + " ";
         }
         console.log(output + (r + 1));
     }
@@ -260,15 +239,15 @@ function checkMoveAlgebraic(algebraic) {
     return checkMoveByCoordinates(algebraicToCoordinate(algebraic));// TODO
 }
 
-function makeMove(position) {
+function makeMoveAtPosition(position) {
     var symbol = blackToMove ? "B" : "W";
     board[position] = symbol;
     blackToMove = !blackToMove;
 }
 
 function test() {
-    for (var i = 0; i < testBoard.length; i++) {
-        board = testBoard[i];
+    for (var i = 0; i < testBoards.length; i++) {
+        board = testBoards[i];
         highlightLegalMoves();
     }
 }
