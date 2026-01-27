@@ -132,9 +132,8 @@ function algebraicToCoordinate(algebraic) {
 
 }
 
-function positionToRowAndCol(position) {
-    // [row, column]
-    return [Math.floor(position / 8), position % 8]
+function positionToCoordinate(position) {
+    return new Coordinate(Math.floor(position/8), position % 8)
 }
 
 function getOppositeColorSymbol() {
