@@ -162,7 +162,7 @@ CONDITIONS for legal move:
 2. there must be an unbroken sequence of opposite colored pieces in between,
    ending with a piece of the same color, and no empty squares in between
 */
-function checkMoveByCoordinates(coordinate) {
+function checkMoveByCoordinates(coordinate, flip) {
     // If the queried position is not empty, then the move is illegal.
     if (board[coordinate.toPosition()] !== "-") {
         return false;
@@ -178,12 +178,17 @@ function checkMoveByCoordinates(coordinate) {
     // 6 5 4   (directions are checked in increasing order, starting from 0)
     var adjacentCoordinates = coordinate.getAdjacent();
 
+    let toBeFlipped = [];
     for (var i = 0; i != 8; ++i) {
         var currPos = adjacentCoordinates[i];
+        let coordStack = []; // keep track of positions to flip
         if (currPos.isValid() && board[currPos.toPosition()] === getOppositeColorSymbol()) {
             while (currPos.isValid()) {
-                if (board[currPos.toPosition()] === getCurrentColorSymbol())
+                coordStack.push(new Coordinate(currPos.row, currPos.col));
+                if (board[currPos.toPosition()] === getCurrentColorSymbol()) {
                     legalDirections[i] = true;
+                    toBeFlipped = toBeFlipped.concat(coordStack);
+                }
                 else if (board[currPos.toPosition()] === "-")
                     break;
                 // Update the coordinate based on the direction as described above.
@@ -220,6 +225,13 @@ function checkMoveByCoordinates(coordinate) {
             }
         }
     }
+    if (flip) {
+        if (legalDirections.some(value => value === true))
+            board[coordinate.toPosition()] = getCurrentColorSymbol();
+        for (let i = 0; i != toBeFlipped.length; ++i) {
+            board[toBeFlipped[i].toPosition()] = getCurrentColorSymbol();
+        }
+    }
     return legalDirections.some(value => value === true);
 }
 
@@ -229,19 +241,23 @@ function highlightLegalMoves(){
         var output = ""
         for (var c = 0; c < COLUMNS; c++) {
             let coord = new Coordinate(r, c);
-            output += checkMoveByCoordinates(coord) ? "* " : board[coord.toPosition()] + " ";
+            output += checkMoveByCoordinates(coord, false) ? "* " : board[coord.toPosition()] + " ";
         }
         console.log(output + (r + 1));
     }
 }
 
 function checkMoveAlgebraic(algebraic) {
-    return checkMoveByCoordinates(algebraicToCoordinate(algebraic));// TODO
+    return checkMoveByCoordinates(algebraicToCoordinate(algebraic), false);// TODO
 }
 
-function makeMoveAtPosition(position) {
-    var symbol = blackToMove ? "B" : "W";
-    board[position] = symbol;
+function makeMoveAtAlgebraic(algebraic) {
+    let coord = algebraicToCoordinate(algebraic);
+    // TODO: "flip"
+    let result = checkMoveByCoordinates(coord, true)
+    if (!result) return false;
+
+    // if the move was successful, set up the next player's move
     blackToMove = !blackToMove;
 }
 
@@ -264,27 +280,30 @@ function randomTest() {
 
 function main() {
     initBoard();
-    console.log("f4 is legal? " + checkMoveAlgebraic("f4"));
-    console.log("d3 is legal? " + checkMoveAlgebraic("d3"));
+    //console.log("f4 is legal? " + checkMoveAlgebraic("f4"));
+    //console.log("d3 is legal? " + checkMoveAlgebraic("d3"));
 
-    console.log("Black to move.")
-    test();
-    for (var i = 0; i != 10; ++i) {
-        randomTest();
-        console.log("")
-    }
-    blackToMove = false;
-    console.log("White to move.")
-    test();
-    for (var i = 0; i != 10; ++i) {
-        randomTest();
-        console.log("")
-    }
-       /*
-    var positions = ["a1", "b2", "c3", "d4", "e5", "f6", "g7", "h8"]
-    for (var i = 0; i != positions.length; ++i) {
-        console.log(positionToRowAndCol(algebraicToIdx(positions[i])));
-    }
-        */
+    console.log("Black to move. d3")
+    makeMoveAtAlgebraic("d3");
+    printBoard();
+    console.log("White to move. e3")
+    makeMoveAtAlgebraic("e3");
+    printBoard();
+    console.log("Black to move. f5")
+    makeMoveAtAlgebraic("f5");
+    printBoard();
+
+    console.log("White to move. a1")
+    makeMoveAtAlgebraic("a1");
+    printBoard();
+
+    console.log("White to move. e6")
+    makeMoveAtAlgebraic("e6");
+    printBoard();
+}
+module.exports = {
+    board,
+    initBoard,
+    checkMoveAlgebraic,
 }
 main();
