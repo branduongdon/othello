@@ -5,8 +5,6 @@ const COLUMNS = 8;
 var board = [];
 var blackToMove = true;
 
-const gameBoard = document.getElementById("board");
-
 /*
 a b c d e f g h
 - - - - - - - - 1
@@ -134,9 +132,8 @@ function algebraicToCoordinate(algebraic) {
 
 }
 
-function positionToRowAndCol(position) {
-    // [row, column]
-    return [Math.floor(position / 8), position % 8]
+function positionToCoordinate(position) {
+    return new Coordinate(Math.floor(position/8), position % 8)
 }
 
 function getOppositeColorSymbol() {
@@ -249,8 +246,8 @@ function highlightLegalMoves(){
     }
 }
 
-function checkMoveAlgebraic(algebraic) {
-    return checkMoveByCoordinates(algebraicToCoordinate(algebraic), false);// TODO
+function checkMoveAlgebraic(algebraic, flip) {
+    return checkMoveByCoordinates(algebraicToCoordinate(algebraic), flip);// TODO
 }
 
 function makeMoveAtAlgebraic(algebraic) {
@@ -261,6 +258,7 @@ function makeMoveAtAlgebraic(algebraic) {
 
     // if the move was successful, set up the next player's move
     blackToMove = !blackToMove;
+    return true;
 }
 
 function test() {
@@ -280,69 +278,79 @@ function randomTest() {
     highlightLegalMoves(board);
 }
 
-//const readline = require("readline");
+const readline = require("readline");
 
-function drawBoard(){
-    for (var r = 0; r < ROWS; r++) {
-        for (var c = 0; c < COLUMNS; c++) {
-            const cell = document.createElement("div"); //creates a div element in memory
-            cell.classList.add("cell"); //applies styling from css
-            gameBoard.appendChild(cell); //attaches to gameboard in html
-        }
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+function processMove(move) {
+    // TODO input checking
+    let moveWasValid = makeMoveAtAlgebraic(move);
+    if (!moveWasValid) {
+        console.log("Invalid move!");
+    } else {
+        console.log("OK");
     }
 }
 
-function drawDiscs() {
-    const cells = gameBoard.children; //gets the 64 cells of the board
-
-    for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c < COLUMNS; c++) {
-            const index = r * COLUMNS + c;
-            
-            if ((r === 3 && c === 3) || (r === 4 && c === 4)) { //white
-                const disc = document.createElement("div");
-                disc.classList.add("disc", "white");
-                cells[index].appendChild(disc); //attaches disc at cell/position
-            }
-            if ((r === 3 && c === 4) || (r === 4 && c === 3)) { //black
-                const disc = document.createElement("div");
-                disc.classList.add("disc", "black");
-                cells[index].appendChild(disc);
-            }
+function checkHasMoves() {
+    for (var r = 0; r < ROWS; r++) {
+        for (var c = 0; c < COLUMNS; c++) {
+            if (checkMoveByCoordinates(new Coordinate(r,c), false)) return true;
         }
     }
+    return false;
+}
+
+function checkOtherHasMoves() {
+    blackToMove = !blackToMove;
+    let otherHasMoves = checkHasMoves();
+    blackToMove = !blackToMove;
+    return otherHasMoves;
+}
+
+function checkGameover() {
+    return !checkHasMoves() && !checkOtherHasMoves();
 }
 
 function main() {
     initBoard();
-    //console.log("f4 is legal? " + checkMoveAlgebraic("f4"));
-    //console.log("d3 is legal? " + checkMoveAlgebraic("d3"));
 
-    /*console.log("Black to move. d3")
-    makeMoveAtAlgebraic("d3");
     printBoard();
-    console.log("White to move. e3")
-    makeMoveAtAlgebraic("e3");
-    printBoard();
-    console.log("Black to move. f5")
-    makeMoveAtAlgebraic("f5");
-    printBoard();
-
-    console.log("White to move. a1")
-    makeMoveAtAlgebraic("a1");
-    printBoard();
-
-    console.log("White to move. e6")
-    makeMoveAtAlgebraic("e6");
-    printBoard();*/
-
-    drawBoard();
-    drawDiscs();
+    highlightLegalMoves();
+    if (blackToMove) {
+        rl.setPrompt("Black to move: ");
+        rl.prompt();
+    } else {
+        rl.setPrompt("White to move: ");
+        rl.prompt();
+    }
 }
+rl.on('line', (move) => {
+    processMove(move);
+    highlightLegalMoves();
 
-/*module.exports = {
+    if (checkGameover()) {
+        console.log("Game over.");
+        rl.close();
+        return;
+    }
+    if (!checkHasMoves()) {
+        blackToMove = !blackToMove;
+        highlightLegalMoves();
+    }
+    if (blackToMove) {
+        rl.setPrompt("Black to move: ");
+    } else {
+        rl.setPrompt("White to move: ");
+    }
+    rl.prompt();
+});
+module.exports = {
     board,
     initBoard,
     checkMoveAlgebraic,
-}*/
+}
 main();
