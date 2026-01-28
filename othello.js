@@ -5,6 +5,8 @@ const COLUMNS = 8;
 var board = [];
 var blackToMove = true;
 
+const gameBoard = document.getElementById("board");
+
 /*
 a b c d e f g h
 - - - - - - - - 1
@@ -278,12 +280,14 @@ function randomTest() {
     highlightLegalMoves(board);
 }
 
+/*
 const readline = require("readline");
 
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
+*/
 
 function processMove(move) {
     // TODO input checking
@@ -315,7 +319,39 @@ function checkGameover() {
     return !checkHasMoves() && !checkOtherHasMoves();
 }
 
+function drawBoard(){
+    for (var r = 0; r < ROWS; r++) {
+        for (var c = 0; c < COLUMNS; c++) {
+            const cell = document.createElement("div"); //creates a div element in memory
+            cell.classList.add("cell"); //applies styling from css
+            gameBoard.appendChild(cell); //attaches to gameboard in html
+        }
+    }
+}
+
+function drawDiscs() {
+    const cells = gameBoard.children; //gets the 64 cells of the board
+
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLUMNS; c++) {
+            const index = r * COLUMNS + c;
+            
+            if ((r === 3 && c === 3) || (r === 4 && c === 4)) { //white
+                const disc = document.createElement("div");
+                disc.classList.add("disc", "white");
+                cells[index].appendChild(disc); //attaches disc at cell/position
+            }
+            if ((r === 3 && c === 4) || (r === 4 && c === 3)) { //black
+                const disc = document.createElement("div");
+                disc.classList.add("disc", "black");
+                cells[index].appendChild(disc);
+            }
+        }
+    }
+}
+
 function main() {
+    /*
     initBoard();
 
     printBoard();
@@ -327,7 +363,12 @@ function main() {
         rl.setPrompt("White to move: ");
         rl.prompt();
     }
+    */
+
+    drawBoard();
+    drawDiscs();
 }
+/*
 rl.on('line', (move) => {
     processMove(move);
     highlightLegalMoves();
@@ -353,4 +394,5 @@ module.exports = {
     initBoard,
     checkMoveAlgebraic,
 }
+*/
 main();
