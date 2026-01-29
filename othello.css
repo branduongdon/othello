@@ -14,6 +14,7 @@
     background: #228b55;
     border: 2.5px groove #000000;
     position: relative;
+    z-index: 0;
 }
 
 .disc {
@@ -24,6 +25,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    z-index: 1;
 }
 
 .disc.black {
@@ -32,6 +34,43 @@
 
 .disc.white {
     background-color: #ffffff;
+}
+/*
+.highlight {
+    width: 45px;
+    height: 45px;
+    border-color: gold;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+}
+    */
+
+.highlight {
+    width: 42px;
+    height: 42px;
+    background: transparent;
+    border: 3px solid gold;
+    position: absolute;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    z-index: 2;
+    transform: translate(-50%, -50%);
+}
+.dot {
+    width: 8px;
+    height: 8px;
+    background: #ff0000;
+    position: absolute;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    z-index: 2;
+    transform: translate(-50%, -50%);
 }
 
 

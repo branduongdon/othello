@@ -3,6 +3,7 @@ const ROWS = 8;
 const COLUMNS = 8;
 
 var board = [];
+var boardLastLegalMove = -1;
 var blackToMove = true;
 
 const gameBoard = document.getElementById("board");
@@ -78,12 +79,6 @@ class Coordinate {
             new Coordinate(this.row  , this.col-1),
         ]
     }
-    /*
-    setCoordinate(row, col) {
-        this.row = row;
-        this.col = col;
-    }
-        */
 }
 
 function initBoard() {
@@ -91,6 +86,15 @@ function initBoard() {
         for (var c = 0; c < COLUMNS; c++) {
             var idx = 8*r + c;
             board[idx] = "-";
+
+            // UI stuff
+            const cell = document.createElement("div"); //creates a div element in memory
+            cell.id = r * COLUMNS + c;
+            cell.addEventListener("click", () => {
+                handleClick(Number.parseInt(cell.id));
+            });
+            cell.classList.add("cell"); //applies styling from css
+            gameBoard.appendChild(cell); //attaches to gameboard in html
         }
     }
     board[27] = "W";
@@ -237,14 +241,28 @@ function checkMoveByCoordinates(coordinate, flip) {
 }
 
 function highlightLegalMoves(){
-    console.log("a b c d e f g h")
+    const cells = gameBoard.children;
     for (var r = 0; r < ROWS; r++) {
-        var output = ""
         for (var c = 0; c < COLUMNS; c++) {
-            let coord = new Coordinate(r, c);
-            output += checkMoveByCoordinates(coord, false) ? "* " : board[coord.toPosition()] + " ";
+            const idx = r * COLUMNS + c;
+            const coord = new Coordinate(r,c);
+            //let coord = new Coordinate(r, c);
+            //output += checkMoveByCoordinates(coord, false) ? "* " : board[coord.toPosition()] + " ";
+            /*
+            if (checkMoveByCoordinates(coord, false)) {
+                cells[index].classList.add("highlight");
+            } else {
+                cells[index].classList.remove("highlight");
+            }
+            */
+            if (checkMoveByCoordinates(coord, false)) {
+                const disc = document.createElement("div");
+                disc.classList.add("highlight");
+                cells[idx].appendChild(disc);
+            }// else {
+            //    cells[idx].removeChild(disc);
+           // }
         }
-        console.log(output + (r + 1));
     }
 }
 
@@ -252,9 +270,15 @@ function checkMoveAlgebraic(algebraic, flip) {
     return checkMoveByCoordinates(algebraicToCoordinate(algebraic), flip);// TODO
 }
 
+function makeMoveAtPosition(idx) {
+    return makeMoveAtCoordinate(positionToCoordinate(idx));
+}
+
 function makeMoveAtAlgebraic(algebraic) {
-    let coord = algebraicToCoordinate(algebraic);
-    // TODO: "flip"
+    return makeMoveAtCoordinate(algebraicToCoordinate(algebraic));
+}
+
+function makeMoveAtCoordinate(coord) {
     let result = checkMoveByCoordinates(coord, true)
     if (!result) return false;
 
@@ -280,22 +304,13 @@ function randomTest() {
     highlightLegalMoves(board);
 }
 
-/*
-const readline = require("readline");
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
-*/
-
 function processMove(move) {
     // TODO input checking
     let moveWasValid = makeMoveAtAlgebraic(move);
     if (!moveWasValid) {
         console.log("Invalid move!");
     } else {
-        console.log("OK");
+        console.log("move OK");
     }
 }
 
@@ -319,80 +334,51 @@ function checkGameover() {
     return !checkHasMoves() && !checkOtherHasMoves();
 }
 
-function drawBoard(){
-    for (var r = 0; r < ROWS; r++) {
-        for (var c = 0; c < COLUMNS; c++) {
-            const cell = document.createElement("div"); //creates a div element in memory
-            cell.classList.add("cell"); //applies styling from css
-            gameBoard.appendChild(cell); //attaches to gameboard in html
-        }
-    }
-}
+function handleClick(idx) {
+    console.log(idx)
 
-function drawDiscs() {
-    const cells = gameBoard.children; //gets the 64 cells of the board
-
-    for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c < COLUMNS; c++) {
-            const index = r * COLUMNS + c;
-            
-            if ((r === 3 && c === 3) || (r === 4 && c === 4)) { //white
-                const disc = document.createElement("div");
-                disc.classList.add("disc", "white");
-                cells[index].appendChild(disc); //attaches disc at cell/position
-            }
-            if ((r === 3 && c === 4) || (r === 4 && c === 3)) { //black
-                const disc = document.createElement("div");
-                disc.classList.add("disc", "black");
-                cells[index].appendChild(disc);
-            }
-        }
-    }
-}
-
-function main() {
-    /*
-    initBoard();
-
-    printBoard();
-    highlightLegalMoves();
-    if (blackToMove) {
-        rl.setPrompt("Black to move: ");
-        rl.prompt();
-    } else {
-        rl.setPrompt("White to move: ");
-        rl.prompt();
-    }
-    */
-
-    drawBoard();
-    drawDiscs();
-}
-/*
-rl.on('line', (move) => {
-    processMove(move);
-    highlightLegalMoves();
-
-    if (checkGameover()) {
-        console.log("Game over.");
-        rl.close();
-        return;
+    // TODO: handle the no legal moves case
+    if (makeMoveAtPosition(idx)) {
+        boardLastLegalMove = idx;
+        drawBoard();
+        printBoard();
     }
     if (!checkHasMoves()) {
         blackToMove = !blackToMove;
         highlightLegalMoves();
     }
-    if (blackToMove) {
-        rl.setPrompt("Black to move: ");
-    } else {
-        rl.setPrompt("White to move: ");
-    }
-    rl.prompt();
-});
-module.exports = {
-    board,
-    initBoard,
-    checkMoveAlgebraic,
 }
-*/
+
+function drawBoard(){
+    const cells = gameBoard.children;
+    for (var r = 0; r < ROWS; r++) {
+        for (var c = 0; c < COLUMNS; c++) {
+            let idx = r * COLUMNS + c;
+            while (cells[idx].firstChild) cells[idx].firstChild.remove();
+
+            if (board[idx] !== "-") {
+                // dra a white/black disk
+                const disc = document.createElement("div");
+                disc.classList.add("disc", board[idx] === "B" ? "black" : "white");
+
+                cells[idx].appendChild(disc);
+
+                // mark the latest move
+                if (idx == boardLastLegalMove) {
+                    const disc = document.createElement("div");
+                    disc.classList.add("dot");
+                    cells[idx].appendChild(disc);
+                }
+            }
+        }
+    }
+    // highlight move
+    highlightLegalMoves();
+}
+
+function main() {
+    initBoard();
+    drawBoard();
+}
+
 main();
