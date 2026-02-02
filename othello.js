@@ -5,6 +5,8 @@ const COLUMNS = 8;
 var board = [];
 var boardLastLegalMove = -1;
 var blackToMove = true;
+var blackScore = 2;
+var whiteScore = 2;
 
 const gameBoard = document.getElementById("board");
 
@@ -374,6 +376,26 @@ function drawBoard(){
     }
     // highlight move
     highlightLegalMoves();
+    checkScore();
+    changeScore();
+}
+
+function checkScore() {
+    blackScore = 0;
+    whiteScore = 0;
+    for (let i = 0 ; i < 64 ; i++){
+        if ((board[i]) === "B"){
+            blackScore++
+        }
+        if ((board[i]) === "W"){
+            whiteScore++
+        }
+    }
+}
+
+function changeScore() {
+    document.getElementById("blackScore").textContent = "Black: " + blackScore;
+    document.getElementById("whiteScore").textContent = "White: " + whiteScore;
 }
 
 function main() {
