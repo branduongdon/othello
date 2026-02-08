@@ -384,7 +384,7 @@ function main() {
 main();
 
 // WebSocket stuff
-const wsUri = "ws://127.0.0.1" // TODO: web pages should be served using HTTPS, WebSocket should use wss as the protocol
+const wsUri = "ws://127.0.0.1:8000" // TODO: web pages should be served using HTTPS, WebSocket should use wss as the protocol
 const websocket = new WebSocket(wsUri);
 const logElement = document.querySelector("#log");
 const moveHistoryElement = document.querySelector("#movehistory");
@@ -402,24 +402,6 @@ function log(text) {
 }
 websocket.addEventListener("open", () => {
     log("websocket: CONNECTED");
-    /*
-    const msg = {
-        id: "",
-        command: "fetch-id",
-        parameter: "",
-    };
-    websocket.send(JSON.stringify(msg));
-    */
-    // heartbeat 10s
-/*     pingInterval = setInterval(() => {
-        const message = {
-            iteration: counter,
-            content: "ping",
-        };
-        log(`websocket: SENT: ping ${counter}`);
-        //websocket.send("ping");
-        websocket.send(JSON.stringify(message));
-    }, 1000) */
 })
 websocket.addEventListener("error", (e) => {
     log(`websocket: ERROR`);

@@ -1,7 +1,7 @@
 import { Game, initBoard, makeMoveAt } from "./game.ts";
 
 
-const BASE_PATH = "../../frontend/public";
+const BASE_PATH = "../../public";
 type GameSession = {
   white_uuid: string;
   black_uuid: string;
@@ -34,7 +34,7 @@ type CommandReply = {
 };
 
 Deno.serve({
-  port: 80,
+  port: 8000,
   async handler(request) {
     if (request.headers.get("upgrade") !== "websocket") {
       const url = new URL(request.url);
