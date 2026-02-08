@@ -8,6 +8,11 @@ var blackToMove = true;
 var blackScore = 2;
 var whiteScore = 2;
 
+var isBlack = true;
+
+var secret = "";
+var playing = false;
+
 const gameBoard = document.getElementById("board");
 
 /*
@@ -21,41 +26,6 @@ a b c d e f g h
 - - - - - - - - 7
 - - - - - - - - 8
 */
-
-const testBoards = [
-    ["B", "W", "W", "-", "-", "-", "-", "-",
-     "-", "-", "-", "-", "-", "W", "W", "W",
-     "-", "-", "-", "-", "-", "-", "-", "-",
-     "-", "-", "B", "W", "B", "-", "-", "-",
-     "-", "W", "W", "B", "W", "W", "-", "-",
-     "-", "-", "-", "-", "-", "-", "-", "-",
-     "-", "-", "-", "-", "-", "-", "-", "-",
-     "-", "-", "B", "B", "W", "B", "W", "-",],
-    ["-", "-", "-", "-", "-", "-", "B", "-",
-     "-", "-", "-", "-", "-", "-", "-", "W",
-     "-", "-", "-", "-", "-", "-", "-", "-",
-     "-", "-", "-", "W", "B", "-", "-", "-",
-     "-", "-", "-", "B", "W", "-", "-", "-",
-     "-", "-", "-", "-", "-", "-", "-", "-",
-     "-", "-", "-", "-", "-", "-", "-", "-",
-     "-", "-", "-", "-", "-", "-", "-", "-",],
-    ["-", "-", "-", "-", "-", "-", "-", "-",
-     "-", "-", "-", "-", "-", "-", "-", "-",
-     "-", "-", "-", "-", "-", "-", "-", "W",
-     "B", "-", "-", "-", "-", "-", "-", "-",
-     "-", "-", "-", "-", "-", "-", "-", "-",
-     "-", "-", "-", "-", "-", "-", "-", "-",
-     "-", "-", "-", "-", "-", "-", "-", "-",
-     "-", "-", "-", "-", "-", "-", "-", "-",],
-    ["-", "-", "-", "-", "-", "-", "-", "-",
-     "-", "-", "-", "-", "-", "-", "-", "B",
-     "W", "-", "-", "-", "-", "-", "-", "-",
-     "-", "-", "-", "-", "-", "-", "-", "-",
-     "-", "-", "-", "-", "-", "-", "-", "-",
-     "-", "-", "-", "-", "-", "-", "-", "-",
-     "-", "-", "-", "-", "-", "-", "-", "-",
-     "-", "-", "-", "-", "-", "-", "-", "-",],
-];
 
 class Coordinate {
     constructor(row, col) {
@@ -81,6 +51,10 @@ class Coordinate {
             new Coordinate(this.row  , this.col-1),
         ]
     }
+}
+
+function isOurTurn() {
+    return isBlack ? blackToMove : !blackToMove;
 }
 
 function initBoard() {
@@ -243,6 +217,7 @@ function checkMoveByCoordinates(coordinate, flip) {
 }
 
 function highlightLegalMoves(){
+    if (!isOurTurn()) return;
     const cells = gameBoard.children;
     for (var r = 0; r < ROWS; r++) {
         for (var c = 0; c < COLUMNS; c++) {
@@ -285,6 +260,7 @@ function makeMoveAtCoordinate(coord) {
     if (!result) return false;
 
     // if the move was successful, set up the next player's move
+    log(`game: placed a ${blackToMove ? "black" : "white"} piece at ${coord.toPosition()}`)
     blackToMove = !blackToMove;
     return true;
 }
@@ -338,17 +314,19 @@ function checkGameover() {
 
 function handleClick(idx) {
     console.log(idx)
+    log(`game: ${blackToMove ? "black" : "white"} clicked at ${idx}`)
+/*     if (!playing) {
+        log(`the game has not started yet!`)
+        return;
+    } */
 
     // TODO: handle the no legal moves case
-    if (makeMoveAtPosition(idx)) {
-        boardLastLegalMove = idx;
-        drawBoard();
-        printBoard();
+    const msg = {
+        id: `${secret}`,
+        command: "move",
+        parameter: idx,
     }
-    if (!checkHasMoves()) {
-        blackToMove = !blackToMove;
-        highlightLegalMoves();
-    }
+    websocket.send(JSON.stringify(msg));
 }
 
 function drawBoard(){
@@ -404,3 +382,76 @@ function main() {
 }
 
 main();
+
+// WebSocket stuff
+const wsUri = "ws://127.0.0.1" // TODO: web pages should be served using HTTPS, WebSocket should use wss as the protocol
+const websocket = new WebSocket(wsUri);
+const logElement = document.querySelector("#log");
+const moveHistoryElement = document.querySelector("#movehistory");
+function updateMoveHistory(moveHistory) {
+    let s = "";
+    for (const move of moveHistory) {
+        s = s + move + " ";
+    }
+    moveHistoryElement.innerText = s;
+    moveHistoryElement.scrollTop = logElement.scrollHeight;
+}
+function log(text) {
+    logElement.innerText = `${logElement.innerText}${text}\n`;
+    logElement.scrollTop = logElement.scrollHeight;
+}
+websocket.addEventListener("open", () => {
+    log("websocket: CONNECTED");
+    /*
+    const msg = {
+        id: "",
+        command: "fetch-id",
+        parameter: "",
+    };
+    websocket.send(JSON.stringify(msg));
+    */
+    // heartbeat 10s
+/*     pingInterval = setInterval(() => {
+        const message = {
+            iteration: counter,
+            content: "ping",
+        };
+        log(`websocket: SENT: ping ${counter}`);
+        //websocket.send("ping");
+        websocket.send(JSON.stringify(message));
+    }, 1000) */
+})
+websocket.addEventListener("error", (e) => {
+    log(`websocket: ERROR`);
+})
+websocket.addEventListener("message", (e) => {
+    const message = JSON.parse(e.data);
+    log(`websocket: RECEIVED: ${e.data}`);
+    if (message.ok && message.type && message.type === "black") {
+        secret = message.content;
+        log(`Server assigned us secret id: ${secret} and the color black`)
+    }
+    if (message.ok && message.type && message.type === "white") {
+        secret = message.content;
+        isBlack = false;
+        log(`Server assigned us secret id: ${secret} and the color black`)
+    }
+    if (message.ok && message.type && message.type === "update") {
+        log(`Got an update from the server: ${e.data}`)
+        board = message.content.board;
+        blackToMove = message.content.blackToMove;
+        if (message.content.moveHistory.length > 0) {
+            boardLastLegalMove = algebraicToIdx(message.content.moveHistory[message.content.moveHistory.length - 1]);
+            updateMoveHistory(message.content.moveHistory);
+        }
+        drawBoard();
+
+        const moveHistoryLabel = document.getElementById("moveHistoryLabel");
+        moveHistoryLabel.innerText = "Move history: " + (blackToMove ? "(black to move, " : "(white to move, ");
+        moveHistoryLabel.innerText = moveHistoryLabel.innerText + (isOurTurn() ? " it's your turn)" : " please wait)");
+    }
+    console.log(`color: ${isBlack ? "black" : "white"}`);
+});
+websocket.addEventListener("close", (event) => {
+    log(`websocket: DISCONNECTED with code ${event.code}, reason: "${event.reason}"`);
+})
