@@ -10,7 +10,7 @@ To run the server, you will need the [Deno](https://docs.deno.com/runtime/) Java
 
 The server runs on port 8000 by default. Note that you will need to grant network and file permissions to Deno when prompted.
 
-3. Open your browser and navigate to [127.0.0.1](http://127.0.0.1) to start the game for the **black** player.
+3. Open your browser and navigate to [127.0.0.1:8000](http://127.0.0.1:8000) to start the game for the **black** player.
 
 4. Open a new tab and navigate to the same location as in step 3 to start the game for the **white** player.
 
